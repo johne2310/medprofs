@@ -47,6 +47,146 @@
           </q-card-section>
         </q-card>
 
+        <!-- Profiles List -->
+        <q-card v-if="profilesStore.profiles.length > 0" class="q-mb-md">
+          <q-card-section>
+            <div class="text-h6">Patient Profiles</div>
+
+            <q-list bordered separator>
+              <q-item
+                v-for="profile in profilesStore.profiles"
+                :key="profile.id"
+                clickable
+                @click="selectProfile(profile)"
+              >
+                <q-item-section>
+                  <q-item-label>
+                    Profile created on {{ formatDate(profile.created_at) }}
+                  </q-item-label>
+                  <q-item-label caption>
+                    Status: {{ profile.status }}
+                    <span v-if="profile.pharmacist_authorizing">
+                      | Authorized by: {{ profile.pharmacist_authorizing }}</span
+                    >
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn color="primary" flat icon="edit" round />
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-card-section>
+        </q-card>
+
+        <!-- Create New Profile Button -->
+        <div class="q-mb-md">
+          <q-btn color="primary" icon="add" label="Create New Profile" @click="createNewProfile" />
+        </div>
+
+        <!-- Current Profile (if selected) -->
+        <q-card v-if="profilesStore.currentProfile">
+          <q-card-section>
+            <div class="text-h6">
+              Medication Profile
+              <q-badge class="q-ml-sm" color="primary"
+                >{{ profilesStore.currentProfile.status }}
+              </q-badge>
+            </div>
+
+            <q-table :columns="columns" :rows="medications" class="q-mt-md" dense row-key="id">
+              <template v-slot:no-data>
+                <div class="full-width text-center q-pa-md">
+                  No medications added yet. Add from favorites above or use the "Add Medication"
+                  button.
+                </div>
+              </template>
+
+              <!-- Custom body template for swipe functionality -->
+              <template v-slot:body="props">
+                <q-tr :props="props">
+                  <!-- Wrap the row content in a div with swipe directives -->
+                  <q-td 
+                    colspan="100%"
+                    class="no-padding"
+                  >
+                    <div 
+                      v-touch-swipe.left="() => editMedication(props.row)"
+                      v-touch-swipe.right="() => confirmDeleteMedication(props.row)"
+                      class="full-width"
+                      @click="showSwipeHint"
+                    >
+                      <div class="row items-center q-pa-sm full-width">
+                        <!-- Drug column -->
+                        <div class="col-6 col-sm-4">
+                          <div class="text-weight-medium">{{ props.row.drug }}</div>
+                          <div v-if="props.row.strength || props.row.form" class="text-caption">
+                            <span v-if="props.row.strength">{{ props.row.strength }}</span>
+                            <span v-if="props.row.strength && props.row.form"> - </span>
+                            <span v-if="props.row.form">{{ props.row.form }}</span>
+                          </div>
+                        </div>
+
+                        <!-- Dose column -->
+                        <div class="col-6 col-sm-2">
+                          {{ props.row.dose }}
+                        </div>
+
+                        <!-- Frequency column -->
+                        <div class="col-6 col-sm-3">
+                          {{ props.row.frequency }}
+                        </div>
+
+                        <!-- Status column -->
+                        <div class="col-6 col-sm-2">
+                          {{ props.row.status }}
+                        </div>
+
+                        <!-- Actions column -->
+                        <div class="col-12 col-sm-1 text-right">
+                          <q-btn
+                            color="primary"
+                            flat
+                            icon="edit"
+                            round
+                            size="sm"
+                            @click.stop="editMedication(props.row)"
+                          />
+                          <q-btn
+                            color="negative"
+                            flat
+                            icon="delete"
+                            round
+                            size="sm"
+                            @click.stop="confirmDeleteMedication(props.row)"
+                          />
+                        </div>
+                      </div>
+
+                      <!-- Swipe indicators -->
+                      <div class="row swipe-indicators" :class="{ 'show-hint': showingSwipeHint }">
+                        <div class="col-6 swipe-indicator swipe-left">
+                          <q-icon name="edit" /> Swipe left to edit
+                        </div>
+                        <div class="col-6 swipe-indicator swipe-right">
+                          <q-icon name="delete" /> Swipe right to delete
+                        </div>
+                      </div>
+                    </div>
+                  </q-td>
+                </q-tr>
+              </template>
+            </q-table>
+
+            <div class="row justify-between q-mt-md">
+              <q-btn color="primary" icon="add" label="Add Medication" @click="addMedication" />
+              <div>
+                <q-btn class="q-mr-sm" color="grey" label="Save Draft" outline @click="saveDraft" />
+                <q-btn color="positive" label="Finalize & Share" @click="finalizeProfile" />
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
+
         <!-- Favorites/Common Drugs -->
         <q-card class="q-mb-md">
           <q-card-section>
@@ -105,9 +245,9 @@
                   @click="addDrugToProfile(drug)"
                 >
                   <div class="text-left drug-content">
-                    <div class="drug-name">{{ drug.generic_name }}</div>
-                    <div v-if="drug.strength" class="text-caption">{{ drug.strength }}</div>
-                    <div v-if="drug.form" class="text-caption">{{ drug.form }}</div>
+                    <div class="drug-name">
+                      {{ drug.generic_name }} {{ drug.strength }} {{ drug.form }}
+                    </div>
                     <div v-if="drug.dose || drug.frequency" class="text-caption">
                       <span v-if="drug.dose">{{ drug.dose }}</span>
                       <span v-if="drug.dose && drug.frequency"> - </span>
@@ -115,105 +255,6 @@
                     </div>
                   </div>
                 </q-btn>
-              </div>
-            </div>
-          </q-card-section>
-        </q-card>
-
-        <!-- Profiles List -->
-        <q-card v-if="profilesStore.profiles.length > 0" class="q-mb-md">
-          <q-card-section>
-            <div class="text-h6">Patient Profiles</div>
-
-            <q-list bordered separator>
-              <q-item
-                v-for="profile in profilesStore.profiles"
-                :key="profile.id"
-                clickable
-                @click="selectProfile(profile)"
-              >
-                <q-item-section>
-                  <q-item-label>
-                    Profile created on {{ formatDate(profile.created_at) }}
-                  </q-item-label>
-                  <q-item-label caption>
-                    Status: {{ profile.status }}
-                    <span v-if="profile.pharmacist_authorizing">
-                      | Authorized by: {{ profile.pharmacist_authorizing }}</span
-                    >
-                  </q-item-label>
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn color="primary" flat icon="edit" round />
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-card-section>
-        </q-card>
-
-        <!-- Create New Profile Button -->
-        <div class="q-mb-md">
-          <q-btn color="primary" icon="add" label="Create New Profile" @click="createNewProfile" />
-        </div>
-
-        <!-- Current Profile (if selected) -->
-        <q-card v-if="profilesStore.currentProfile">
-          <q-card-section>
-            <div class="text-h6">
-              Medication Profile
-              <q-badge class="q-ml-sm" color="primary"
-                >{{ profilesStore.currentProfile.status }}
-              </q-badge>
-            </div>
-
-            <q-table :columns="columns" :rows="medications" class="q-mt-md" row-key="id">
-              <template v-slot:no-data>
-                <div class="full-width text-center q-pa-md">
-                  No medications added yet. Add from favorites above or use the "Add Medication"
-                  button.
-                </div>
-              </template>
-
-              <template v-slot:body-cell-drug="props">
-                <q-td :props="props">
-                  <div>
-                    <div class="text-weight-medium">{{ props.row.drug }}</div>
-                    <div v-if="props.row.strength || props.row.form" class="text-caption">
-                      <span v-if="props.row.strength">{{ props.row.strength }}</span>
-                      <span v-if="props.row.strength && props.row.form"> - </span>
-                      <span v-if="props.row.form">{{ props.row.form }}</span>
-                    </div>
-                  </div>
-                </q-td>
-              </template>
-
-              <template v-slot:body-cell-actions="props">
-                <q-td :props="props">
-                  <q-btn
-                    color="primary"
-                    flat
-                    icon="edit"
-                    round
-                    size="sm"
-                    @click="editMedication(props.row)"
-                  />
-                  <q-btn
-                    color="negative"
-                    flat
-                    icon="delete"
-                    round
-                    size="sm"
-                    @click="confirmDeleteMedication(props.row)"
-                  />
-                </q-td>
-              </template>
-            </q-table>
-
-            <div class="row justify-between q-mt-md">
-              <q-btn color="primary" icon="add" label="Add Medication" @click="addMedication" />
-              <div>
-                <q-btn class="q-mr-sm" color="grey" label="Save Draft" outline @click="saveDraft" />
-                <q-btn color="positive" label="Finalize & Share" @click="finalizeProfile" />
               </div>
             </div>
           </q-card-section>
@@ -351,6 +392,22 @@ const editedMedication = ref({
 })
 const originalMedication = ref(null)
 
+// Track if swipe hint has been shown
+const swipeHintShown = ref(false)
+const showingSwipeHint = ref(false)
+
+// Show swipe hint for a few seconds
+function showSwipeHint() {
+  if (swipeHintShown.value) return
+
+  showingSwipeHint.value = true
+  swipeHintShown.value = true
+
+  setTimeout(() => {
+    showingSwipeHint.value = false
+  }, 3000) // Show hint for 3 seconds
+}
+
 // Get current patient from store
 const currentPatient = computed(() => patientStore.currentPatient)
 
@@ -389,9 +446,9 @@ const medications = computed(() => {
   // Sort by status: Updated first, then Current, then Ceased
   return [...meds].sort((a, b) => {
     const statusOrder = {
-      'Updated': 1,
-      'Current': 2,
-      'Ceased': 3
+      Updated: 1,
+      Current: 2,
+      Ceased: 3,
     }
 
     const statusA = statusOrder[a.status] || 999 // Default high value for unknown statuses
@@ -479,6 +536,12 @@ async function addDrugToProfile(drug) {
 // Select a profile
 function selectProfile(profile) {
   profilesStore.setCurrentProfile(profile)
+
+  // Show swipe hint when a profile is selected if it hasn't been shown yet
+  if (!swipeHintShown.value && profile.profile_data && profile.profile_data.medications && profile.profile_data.medications.length > 0) {
+    // Delay slightly to ensure the table is rendered
+    setTimeout(showSwipeHint, 500)
+  }
 }
 
 // Create new profile
@@ -667,11 +730,11 @@ onMounted(async () => {
 
 <style>
 .drug-btn {
-  height: 90px; /* Reduced height for better screen real estate */
+  height: 60px; /* Further reduced height for better screen real estate */
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 8px 8px 4px 8px; /* Reduced bottom padding */
+  padding: 6px 6px 3px 6px; /* Further reduced padding for smaller buttons */
 }
 
 .drug-content {
@@ -682,9 +745,11 @@ onMounted(async () => {
   overflow: hidden;
   justify-content: flex-start; /* Align content to top */
   margin-bottom: 0; /* Ensure no extra margin at bottom */
+  gap: 1px; /* Minimal spacing between elements */
 }
 
 .drug-name {
+  font-size: small; /* Reduced font size for better fit in smaller buttons */
   font-weight: bold;
   white-space: nowrap;
   overflow: hidden;
@@ -693,8 +758,58 @@ onMounted(async () => {
 
 /* Ensure text captions don't overflow */
 .drug-content .text-caption {
+  font-size: x-small; /* Smaller font size for captions in reduced space */
+  line-height: 1.2; /* Tighter line height for better fit */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Swipe functionality styles */
+.swipe-indicators {
+  display: none; /* Hidden by default */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.8rem;
+  opacity: 0.7;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Show indicators when swiping or when hint is active */
+.q-table tbody tr:active .swipe-indicators,
+.swipe-indicators.show-hint {
+  display: flex;
+}
+
+.swipe-indicator {
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swipe-left {
+  color: var(--q-primary);
+  text-align: right;
+  justify-content: flex-end;
+}
+
+.swipe-right {
+  color: var(--q-negative);
+  text-align: left;
+  justify-content: flex-start;
+}
+
+/* Add a subtle background to the swipeable rows */
+.q-table tbody tr td {
+  position: relative;
+}
+
+/* Add a visual hint that the row is swipeable */
+.q-table tbody tr:hover {
+  cursor: grab;
 }
 </style>
