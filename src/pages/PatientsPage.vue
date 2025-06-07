@@ -75,11 +75,18 @@ const patientStore = usePatientStore()
 const router = useRouter()
 const searchTerm = ref('')
 
-// Format date from ISO to local format
+// Format date from ISO to local format with time in 12-hour format
 function formatDate(isoDate) {
   if (!isoDate) return ''
   const date = new Date(isoDate)
-  return date.toLocaleDateString()
+  return date.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
 }
 
 // Search patients

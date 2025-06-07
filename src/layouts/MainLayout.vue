@@ -1,18 +1,18 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated :class="headerColorClass">
+  <q-layout view="hHh Lpr lFf">
+    <q-header :class="headerColorClass">
       <q-toolbar>
-        <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
+        <q-btn aria-label="Menu" dense flat icon="menu" round @click="toggleLeftDrawer" />
 
-        <q-toolbar-title> Fast Profiles </q-toolbar-title>
+        <q-toolbar-title> Fast Profiles</q-toolbar-title>
 
-          <div class="q-mr-md">ver: {{ packageInfo.version }}</div>
+        <div class="q-mr-md">ver: {{ packageInfo.version }}</div>
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
+    <q-drawer v-model="leftDrawerOpen" bordered show-if-above>
       <q-list>
-        <q-item-label header> Navigation </q-item-label>
+        <q-item-label header> Navigation</q-item-label>
 
         <EssentialLink v-for="link in linksList" :key="link.title" v-bind="link" />
       </q-list>
@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import EssentialLink from 'components/EssentialLink.vue'
 import packageInfo from '../../package.json'
@@ -94,7 +94,11 @@ const route = useRoute()
 
 const headerColorClass = computed(() => {
   // Blue for Dashboard, Profiles, and Drugs
-  if (route.path.startsWith('/dashboard') || route.path.startsWith('/profiles') || route.path.startsWith('/drugs')) {
+  if (
+    route.path.startsWith('/dashboard') ||
+    route.path.startsWith('/profiles') ||
+    route.path.startsWith('/drugs')
+  ) {
     return 'bg-blue'
   }
   // Grey for Patients and Settings

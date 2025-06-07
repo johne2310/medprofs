@@ -1,99 +1,80 @@
-import { Notify } from 'quasar'
+// import { ref } from 'vue'
+import { useQuasar } from 'quasar'
 
-/**
- * Composable for showing toast notifications
- * @returns {Object} Toast methods
- */
-export function useToast() {
-  /**
-   * Show a success toast message
-   * @param {string} message - The message to display
-   * @param {Object} options - Additional options for the toast
-   */
-  const success = (message, options = {}) => {
-    Notify.create({
-      type: 'positive',
-      color: 'positive',
-      message,
-      icon: 'check_circle',
-      position: 'bottom-right',
-      timeout: 3000,
-      ...options
-    })
+export function useToaster() {
+  const $q = useQuasar()
+
+  const showNotification = (message, type = 'success') => {
+    let color = ''
+    let icon = ''
+
+    if (type === 'success') {
+      color = 'positive' // Quasar's default success color
+      icon = 'check_circle'
+    } else if (type === 'error') {
+      color = 'negative' // Quasar's default error color
+      icon = 'error'
+    } else if (type === 'warning') {
+      color = 'warning' // Quasar's default warning color
+      icon = 'warning'
+    } else if (type === 'info') {
+      color = 'info' // Quasar's default info color
+      icon = 'info'
+    } else {
+      color = 'grey-8' // Default for unknown types
+      icon = 'info'
+    }
+
+    // Check if $q is defined and has notify function
+    if ($q && typeof $q.notify === 'function') {
+      $q.notify({
+        message: message,
+        color: color,
+        icon: icon,
+        position: 'bottom-right', // Or 'top', 'bottom-left', etc.
+        timeout: 3000, // Duration in ms
+        actions: [
+          {
+            label: 'Dismiss',
+            color: 'white',
+            handler: () => {
+              /* ... */
+            },
+          },
+        ],
+      })
+    } else {
+      // Fallback if $q.notify is not available
+      console.warn('Quasar notify is not available, using console instead:', message)
+      if (type === 'error') {
+        console.error(message)
+      } else {
+        console.log(message)
+      }
+    }
   }
 
-  /**
-   * Show an error toast message
-   * @param {string} message - The message to display
-   * @param {Object} options - Additional options for the toast
-   */
-  const error = (message, options = {}) => {
-    Notify.create({
-      type: 'negative',
-      color: 'negative',
-      message,
-      icon: 'error',
-      position: 'bottom-right',
-      timeout: 5000,
-      ...options
-    })
+  const showSuccess = (message) => {
+    showNotification(message, 'success')
   }
 
-  /**
-   * Show an info toast message
-   * @param {string} message - The message to display
-   * @param {Object} options - Additional options for the toast
-   */
-  const info = (message, options = {}) => {
-    Notify.create({
-      type: 'info',
-      color: 'info',
-      message,
-      icon: 'info',
-      position: 'top',
-      timeout: 3000,
-      ...options
-    })
+  const showError = (message) => {
+    showNotification(message, 'error')
   }
 
-  /**
-   * Show a warning toast message
-   * @param {string} message - The message to display
-   * @param {Object} options - Additional options for the toast
-   */
-  const warning = (message, options = {}) => {
-    Notify.create({
-      type: 'warning',
-      color: 'warning',
-      message,
-      icon: 'warning',
-      position: 'top',
-      timeout: 4000,
-      ...options
-    })
+  const showWarning = (message) => {
+    showNotification(message, 'warning')
   }
 
-  /**
-   * Show a custom toast message
-   * @param {Object} options - Options for the toast
-   */
-  const custom = (options) => {
-    Notify.create(options)
-  }
-
-  /**
-   * Dismiss all currently displayed toasts
-   */
-  const dismissAll = () => {
-    Notify.dismissAll()
+  const showInfo = (message) => {
+    showNotification(message, 'info')
   }
 
   return {
-    success,
-    error,
-    info,
-    warning,
-    custom,
-    dismissAll
+    showNotification,
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo,
   }
 }
