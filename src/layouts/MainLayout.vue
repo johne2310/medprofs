@@ -1,6 +1,6 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+    <q-header elevated :class="headerColorClass">
       <q-toolbar>
         <q-btn
           flat
@@ -12,10 +12,10 @@
         />
 
         <q-toolbar-title>
-          Quasar App
+          Fast Profiles
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <div>v0.0.1</div>
       </q-toolbar>
     </q-header>
 
@@ -28,7 +28,7 @@
         <q-item-label
           header
         >
-          Essential Links
+          Navigation
         </q-item-label>
 
         <EssentialLink
@@ -46,55 +46,68 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import EssentialLink from 'components/EssentialLink.vue'
 
 const linksList = [
   {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
+    title: 'Dashboard',
+    caption: 'Home screen',
+    icon: 'dashboard',
+    to: '/dashboard'
   },
   {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
+    title: 'Patient Selection',
+    caption: 'Select or add a patient',
+    icon: 'people',
+    to: '/patients'
   },
   {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
+    title: 'Medication Profiles',
+    caption: 'Create and manage profiles',
+    icon: 'medication',
+    to: '/profiles'
   },
   {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
+    title: 'Favorites',
+    caption: 'Manage common drugs',
     icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
+    to: '/favorites'
+  },
+  {
+    title: 'Settings',
+    caption: 'Application settings',
+    icon: 'settings',
+    to: '/settings'
+  },
+  {
+    title: 'Logout',
+    caption: 'Sign out of application',
+    icon: 'logout',
+    to: '/logout'
   }
 ]
 
 const leftDrawerOpen = ref(false)
+const route = useRoute()
+
+const headerColorClass = computed(() => {
+  // Blue for Dashboard and Profiles
+  if (route.path.startsWith('/dashboard') || route.path.startsWith('/profiles')) {
+    return 'bg-blue'
+  }
+  // Grey for Patients and Settings
+  else if (route.path.startsWith('/patients') || route.path.startsWith('/settings')) {
+    return 'bg-grey-8'
+  }
+  // Orange for Favorites and Logout
+  else if (route.path.startsWith('/favorites') || route.path.startsWith('/logout')) {
+    return 'bg-orange'
+  }
+  // Default to blue
+  return 'bg-blue'
+})
 
 function toggleLeftDrawer () {
   leftDrawerOpen.value = !leftDrawerOpen.value
