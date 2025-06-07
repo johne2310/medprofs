@@ -93,7 +93,22 @@
               </q-badge>
             </div>
 
-            <q-table :columns="columns" :rows="medications" class="q-mt-md" dense row-key="id">
+            <!-- Debug info -->
+            <div v-if="medications.length > 0" class="q-mb-md text-positive">
+              Found {{ medications.length }} medications to display
+            </div>
+            <div v-else class="q-mb-md text-negative">No medications found to display</div>
+
+            <q-table
+              :columns="columns"
+              :rows="medications"
+              bordered
+              class="q-mt-md medication-table"
+              dense
+              flat
+              row-key="id"
+              separator="cell"
+            >
               <template v-slot:no-data>
                 <div class="full-width text-center q-pa-md">
                   No medications added yet. Add from favorites above or use the "Add Medication"
@@ -101,77 +116,51 @@
                 </div>
               </template>
 
-              <!-- Custom body template for swipe functionality -->
               <template v-slot:body="props">
                 <q-tr :props="props">
-                  <!-- Wrap the row content in a div with swipe directives -->
-                  <q-td 
-                    colspan="100%"
-                    class="no-padding"
-                  >
-                    <div 
-                      v-touch-swipe.left="() => editMedication(props.row)"
-                      v-touch-swipe.right="() => confirmDeleteMedication(props.row)"
-                      class="full-width"
-                      @click="showSwipeHint"
-                    >
-                      <div class="row items-center q-pa-sm full-width">
-                        <!-- Drug column -->
-                        <div class="col-6 col-sm-4">
-                          <div class="text-weight-medium">{{ props.row.drug }}</div>
-                          <div v-if="props.row.strength || props.row.form" class="text-caption">
-                            <span v-if="props.row.strength">{{ props.row.strength }}</span>
-                            <span v-if="props.row.strength && props.row.form"> - </span>
-                            <span v-if="props.row.form">{{ props.row.form }}</span>
-                          </div>
-                        </div>
-
-                        <!-- Dose column -->
-                        <div class="col-6 col-sm-2">
-                          {{ props.row.dose }}
-                        </div>
-
-                        <!-- Frequency column -->
-                        <div class="col-6 col-sm-3">
-                          {{ props.row.frequency }}
-                        </div>
-
-                        <!-- Status column -->
-                        <div class="col-6 col-sm-2">
-                          {{ props.row.status }}
-                        </div>
-
-                        <!-- Actions column -->
-                        <div class="col-12 col-sm-1 text-right">
-                          <q-btn
-                            color="primary"
-                            flat
-                            icon="edit"
-                            round
-                            size="sm"
-                            @click.stop="editMedication(props.row)"
-                          />
-                          <q-btn
-                            color="negative"
-                            flat
-                            icon="delete"
-                            round
-                            size="sm"
-                            @click.stop="confirmDeleteMedication(props.row)"
-                          />
-                        </div>
-                      </div>
-
-                      <!-- Swipe indicators -->
-                      <div class="row swipe-indicators" :class="{ 'show-hint': showingSwipeHint }">
-                        <div class="col-6 swipe-indicator swipe-left">
-                          <q-icon name="edit" /> Swipe left to edit
-                        </div>
-                        <div class="col-6 swipe-indicator swipe-right">
-                          <q-icon name="delete" /> Swipe right to delete
-                        </div>
-                      </div>
+                  <!-- Drug column -->
+                  <q-td key="drug" :props="props" auto-width>
+                    <div class="text-weight-medium">{{ props.row.drug }}</div>
+                    <div v-if="props.row.strength || props.row.form" class="text-caption">
+                      <span v-if="props.row.strength">{{ props.row.strength }}</span>
+                      <span v-if="props.row.strength && props.row.form"> - </span>
+                      <span v-if="props.row.form">{{ props.row.form }}</span>
                     </div>
+                  </q-td>
+
+                  <!-- Dose column -->
+                  <q-td key="dose" :props="props" auto-width>
+                    {{ props.row.dose }}
+                  </q-td>
+
+                  <!-- Frequency column -->
+                  <q-td key="frequency" :props="props" auto-width>
+                    {{ props.row.frequency }}
+                  </q-td>
+
+                  <!-- Status column -->
+                  <q-td key="status" :props="props" auto-width>
+                    {{ props.row.status }}
+                  </q-td>
+
+                  <!-- Actions column -->
+                  <q-td key="actions" :props="props" auto-width class="text-right">
+                    <q-btn
+                      color="primary"
+                      flat
+                      icon="edit"
+                      round
+                      size="sm"
+                      @click.stop="editMedication(props.row)"
+                    />
+                    <q-btn
+                      color="negative"
+                      flat
+                      icon="delete"
+                      round
+                      size="sm"
+                      @click.stop="confirmDeleteMedication(props.row)"
+                    />
                   </q-td>
                 </q-tr>
               </template>
@@ -186,6 +175,8 @@
             </div>
           </q-card-section>
         </q-card>
+
+        <!-- End Profile table-->
 
         <!-- Favorites/Common Drugs -->
         <q-card class="q-mb-md">
@@ -263,13 +254,13 @@
     </div>
     <!-- Edit Medication Dialog -->
     <q-dialog v-model="editDialog" persistent>
-      <q-card style="min-width: 350px">
+      <q-card style="min-width: 450px">
         <q-card-section>
           <div class="text-h6">Edit Medication</div>
         </q-card-section>
 
         <q-card-section>
-          <q-input v-model="editedMedication.drug" dense label="Drug Name" outlined />
+          <q-input v-model="editedMedication.drug" label="Drug Name" outlined />
 
           <div class="row q-col-gutter-sm">
             <div class="col-12 col-sm-6">
@@ -293,7 +284,7 @@
           </div>
 
           <div class="row q-col-gutter-sm">
-            <div class="col-12 col-sm-6">
+            <div class="col-12 col-sm-4">
               <q-input
                 v-model="editedMedication.dose"
                 class="q-mt-sm"
@@ -302,7 +293,7 @@
                 outlined
               />
             </div>
-            <div class="col-12 col-sm-6">
+            <div class="col-12 col-sm-8">
               <q-input
                 v-model="editedMedication.frequency"
                 class="q-mt-sm"
@@ -392,22 +383,6 @@ const editedMedication = ref({
 })
 const originalMedication = ref(null)
 
-// Track if swipe hint has been shown
-const swipeHintShown = ref(false)
-const showingSwipeHint = ref(false)
-
-// Show swipe hint for a few seconds
-function showSwipeHint() {
-  if (swipeHintShown.value) return
-
-  showingSwipeHint.value = true
-  swipeHintShown.value = true
-
-  setTimeout(() => {
-    showingSwipeHint.value = false
-  }, 3000) // Show hint for 3 seconds
-}
-
 // Get current patient from store
 const currentPatient = computed(() => patientStore.currentPatient)
 
@@ -437,14 +412,30 @@ const columns = [
 
 // Get medications from current profile, sorted by status (Updated, Current, Ceased)
 const medications = computed(() => {
-  if (!profilesStore.currentProfile || !profilesStore.currentProfile.profile_data) {
+  if (!profilesStore.currentProfile) {
+    console.log('No current profile')
     return []
   }
 
-  const meds = profilesStore.currentProfile.profile_data.medications || []
+  if (!profilesStore.currentProfile.profile_data) {
+    console.log('Current profile has no profile_data')
+    return []
+  }
+
+  if (!profilesStore.currentProfile.profile_data.medications) {
+    console.log('Current profile has no medications')
+    return []
+  }
+
+  const meds = profilesStore.currentProfile.profile_data.medications
+
+  if (meds.length === 0) {
+    console.log('Medications array is empty')
+    return []
+  }
 
   // Sort by status: Updated first, then Current, then Ceased
-  return [...meds].sort((a, b) => {
+  const sortedMeds = [...meds].sort((a, b) => {
     const statusOrder = {
       Updated: 1,
       Current: 2,
@@ -456,6 +447,9 @@ const medications = computed(() => {
 
     return statusA - statusB
   })
+
+  console.log('Sorted medications:', sortedMeds)
+  return sortedMeds
 })
 
 // Format date from ISO to local format with time in 12-hour format
@@ -480,28 +474,49 @@ async function loadCommonDrugs() {
 
 // Add drug to profile
 async function addDrugToProfile(drug) {
+  console.log('Adding drug to profile:', drug)
+
   if (!profilesStore.currentProfile) {
+    console.log('No current profile, creating a new one')
     // If no profile is selected, create a new one
     await createNewProfile()
   }
 
-  if (!profilesStore.currentProfile) return
+  if (!profilesStore.currentProfile) {
+    console.error('Failed to create or get current profile')
+    showError('Failed to create or get current profile')
+    return
+  }
+
+  // Ensure profile_data exists
+  if (!profilesStore.currentProfile.profile_data) {
+    console.log('Profile data is missing, initializing it')
+    await profilesStore.updateProfile(profilesStore.currentProfile.id, {
+      profile_data: { medications: [] },
+    })
+
+    // Refresh the profile
+    await profilesStore.fetchProfileById(profilesStore.currentProfile.id)
+
+    if (!profilesStore.currentProfile || !profilesStore.currentProfile.profile_data) {
+      console.error('Failed to initialize profile data')
+      showError('Failed to initialize profile data')
+      return
+    }
+  }
 
   // Get current medications
-  const currentMedications = profilesStore.currentProfile.profile_data.medications || []
+  const currentMedications = Array.isArray(profilesStore.currentProfile.profile_data.medications)
+    ? profilesStore.currentProfile.profile_data.medications
+    : []
 
   // Check if drug already exists in profile
   const existingDrugIndex = currentMedications.findIndex((med) => med.drug_id === drug.id)
 
   if (existingDrugIndex >= 0) {
     // Drug already exists, show notification
-    console.log('drug already exists')
+    console.log('Drug already exists in profile')
     showSuccess(`${drug.generic_name} ${drug.strength} is already in this profile`)
-    // $q.notify({
-    //   color: 'warning',
-    //   message: `${drug.generic_name} is already in this profile`,
-    //   icon: 'warning'
-    // })
     return
   }
 
@@ -518,30 +533,36 @@ async function addDrugToProfile(drug) {
     status: 'Current',
   }
 
+  console.log('New medication to add:', newMedication)
+
   // Update profile data
   const updatedProfileData = {
     ...profilesStore.currentProfile.profile_data,
     medications: [...currentMedications, newMedication],
   }
 
-  // Save to database
-  await profilesStore.updateProfile(profilesStore.currentProfile.id, {
-    profile_data: updatedProfileData,
-  })
+  try {
+    // Save to database
+    const updatedProfile = await profilesStore.updateProfile(profilesStore.currentProfile.id, {
+      profile_data: updatedProfileData,
+    })
 
-  // Show success notification
-  showSuccess(`Added ${drug.generic_name} ${drug.strength} to profile`)
+    console.log('Profile updated successfully:', updatedProfile)
+
+    // Show success notification
+    showSuccess(`Added ${drug.generic_name} ${drug.strength} to profile`)
+
+    // Log the current medications after update
+    console.log('Current medications after update:', medications.value)
+  } catch (error) {
+    console.error('Failed to update profile:', error)
+    showError(`Failed to add medication: ${error.message}`)
+  }
 }
 
 // Select a profile
 function selectProfile(profile) {
   profilesStore.setCurrentProfile(profile)
-
-  // Show swipe hint when a profile is selected if it hasn't been shown yet
-  if (!swipeHintShown.value && profile.profile_data && profile.profile_data.medications && profile.profile_data.medications.length > 0) {
-    // Delay slightly to ensure the table is rendered
-    setTimeout(showSwipeHint, 500)
-  }
 }
 
 // Create new profile
@@ -557,7 +578,33 @@ async function createNewProfile() {
     },
   }
 
-  await profilesStore.createProfile(newProfile)
+  console.log('Creating new profile with data:', newProfile)
+  const createdProfile = await profilesStore.createProfile(newProfile)
+  console.log('Created profile:', createdProfile)
+
+  // Ensure the profile data structure is correct
+  if (
+    createdProfile &&
+    (!createdProfile.profile_data || !Array.isArray(createdProfile.profile_data.medications))
+  ) {
+    console.error('Created profile has invalid data structure:', createdProfile)
+
+    // Fix the profile data structure if needed
+    const fixedProfile = {
+      ...createdProfile,
+      profile_data: {
+        ...(createdProfile.profile_data || {}),
+        medications: Array.isArray(createdProfile.profile_data?.medications)
+          ? createdProfile.profile_data.medications
+          : [],
+      },
+    }
+
+    console.log('Fixing profile data structure:', fixedProfile)
+    await profilesStore.updateProfile(createdProfile.id, {
+      profile_data: fixedProfile.profile_data,
+    })
+  }
 }
 
 // Add medication to profile
@@ -568,6 +615,8 @@ function addMedication() {
 
 // Confirm delete medication
 function confirmDeleteMedication(medication) {
+  console.log('Confirming delete of medication:', medication)
+  showSuccess('Deleting medication')
   $q.dialog({
     title: 'Confirm Deletion',
     message: `Are you sure you want to remove ${medication.drug} from this profile?`,
@@ -765,51 +814,28 @@ onMounted(async () => {
   text-overflow: ellipsis;
 }
 
-/* Swipe functionality styles */
-.swipe-indicators {
-  display: none; /* Hidden by default */
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 0.8rem;
-  opacity: 0.7;
-  background-color: rgba(0, 0, 0, 0.05);
+/* Medication table styles */
+.medication-table {
+  width: 100%;
+  border: 1px solid #e0e0e0;
 }
 
-/* Show indicators when swiping or when hint is active */
-.q-table tbody tr:active .swipe-indicators,
-.swipe-indicators.show-hint {
-  display: flex;
+.medication-table .q-table__top,
+.medication-table .q-table__bottom {
+  padding: 8px 16px;
 }
 
-.swipe-indicator {
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.medication-table thead tr th {
+  font-weight: bold;
+  background-color: #f5f5f5;
 }
 
-.swipe-left {
-  color: var(--q-primary);
-  text-align: right;
-  justify-content: flex-end;
+.medication-table tbody tr:hover {
+  background-color: #f0f8ff;
 }
 
-.swipe-right {
-  color: var(--q-negative);
-  text-align: left;
-  justify-content: flex-start;
-}
-
-/* Add a subtle background to the swipeable rows */
-.q-table tbody tr td {
-  position: relative;
-}
-
-/* Add a visual hint that the row is swipeable */
-.q-table tbody tr:hover {
-  cursor: grab;
+.medication-table .q-td {
+  padding: 8px;
+  border-bottom: 1px solid #e0e0e0;
 }
 </style>

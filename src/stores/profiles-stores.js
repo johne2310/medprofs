@@ -42,6 +42,8 @@ export const useProfilesStore = defineStore('profiles', () => {
     loading.value = true
     error.value = null
 
+    console.log('Fetching profile by ID:', profileId)
+
     try {
       const { data, error: fetchError } = await supabase
         .from('patient_profiles')
@@ -50,10 +52,57 @@ export const useProfilesStore = defineStore('profiles', () => {
         .single()
 
       if (fetchError) {
+        console.error('Supabase fetch error:', fetchError)
         throw fetchError
       }
 
-      currentProfile.value = data
+      console.log('Fetched profile data:', data)
+
+      if (!data) {
+        console.warn('No profile found with ID:', profileId)
+        return null
+      }
+
+      // Ensure profile_data exists
+      if (!data.profile_data) {
+        console.log('Profile has no profile_data, initializing it')
+        data.profile_data = { medications: [] }
+
+        // Update the profile in the database
+        await updateProfile(profileId, {
+          profile_data: data.profile_data
+        })
+      } 
+      // Ensure medications exists and is an array
+      else if (!data.profile_data.medications) {
+        console.log('Profile has no medications array, initializing it')
+        data.profile_data.medications = []
+
+        // Update the profile in the database
+        await updateProfile(profileId, {
+          profile_data: {
+            ...data.profile_data,
+            medications: []
+          }
+        })
+      }
+      // Ensure medications is an array
+      else if (!Array.isArray(data.profile_data.medications)) {
+        console.warn('Profile medications is not an array, converting it')
+        data.profile_data.medications = []
+
+        // Update the profile in the database
+        await updateProfile(profileId, {
+          profile_data: {
+            ...data.profile_data,
+            medications: []
+          }
+        })
+      }
+
+      // Set the current profile using our enhanced setCurrentProfile function
+      setCurrentProfile(data)
+
       return data
     } catch (err) {
       error.value = err.message || 'Failed to fetch profile'
@@ -100,7 +149,25 @@ export const useProfilesStore = defineStore('profiles', () => {
     loading.value = true
     error.value = null
 
+    console.log('Updating profile:', profileId, 'with data:', profileData)
+
     try {
+      // Ensure we're not overwriting the entire profile_data if only updating a part
+      if (profileData.profile_data && currentProfile.value && currentProfile.value.profile_data) {
+        console.log('Merging profile_data with existing data')
+        profileData.profile_data = {
+          ...currentProfile.value.profile_data,
+          ...profileData.profile_data
+        }
+
+        // Ensure medications is always an array
+        if (profileData.profile_data.medications === undefined) {
+          profileData.profile_data.medications = currentProfile.value.profile_data.medications || []
+        }
+
+        console.log('Merged profile_data:', profileData.profile_data)
+      }
+
       const { data, error: updateError } = await supabase
         .from('patient_profiles')
         .update(profileData)
@@ -108,23 +175,42 @@ export const useProfilesStore = defineStore('profiles', () => {
         .select()
 
       if (updateError) {
+        console.error('Supabase update error:', updateError)
         throw updateError
       }
+
+      console.log('Update response data:', data)
 
       // Update the profile in the list if it exists
       if (data && data.length > 0) {
         const index = profiles.value.findIndex((p) => p.id === profileId)
         if (index !== -1) {
+          console.log('Updating profile in profiles list at index:', index)
           profiles.value[index] = data[0]
+        } else {
+          console.log('Profile not found in profiles list')
         }
 
         // Update current profile if it's the one being edited
         if (currentProfile.value && currentProfile.value.id === profileId) {
-          currentProfile.value = data[0]
+          console.log('Updating currentProfile with new data')
+          // Create a new object to ensure reactivity
+          currentProfile.value = { ...data[0] }
+
+          // Ensure profile_data and medications exist
+          if (!currentProfile.value.profile_data) {
+            currentProfile.value.profile_data = { medications: [] }
+          } else if (!currentProfile.value.profile_data.medications) {
+            currentProfile.value.profile_data.medications = []
+          }
+
+          console.log('Updated currentProfile:', currentProfile.value)
         }
+      } else {
+        console.warn('No data returned from update operation')
       }
 
-      return data ? data[0] : null
+      return data && data.length > 0 ? data[0] : null
     } catch (err) {
       error.value = err.message || 'Failed to update profile'
       console.error('Update profile error:', err)
@@ -260,6 +346,7 @@ export const useProfilesStore = defineStore('profiles', () => {
         throw fetchError
       }
       console.log('common drugs: ', data)
+
       commonDrugs.value = data || []
       return data
     } catch (err) {
@@ -299,11 +386,40 @@ export const useProfilesStore = defineStore('profiles', () => {
 
   // Set current profile
   function setCurrentProfile(profile) {
-    currentProfile.value = profile
+    console.log('Setting current profile:', profile)
+
+    if (!profile) {
+      console.warn('Attempted to set null or undefined profile')
+      currentProfile.value = null
+      return
+    }
+
+    // Create a new object to ensure reactivity
+    const newProfile = { ...profile }
+
+    // Ensure profile_data exists
+    if (!newProfile.profile_data) {
+      console.log('Profile has no profile_data, initializing it')
+      newProfile.profile_data = { medications: [] }
+    } 
+    // Ensure medications exists and is an array
+    else if (!newProfile.profile_data.medications) {
+      console.log('Profile has no medications array, initializing it')
+      newProfile.profile_data.medications = []
+    } 
+    // Ensure medications is an array
+    else if (!Array.isArray(newProfile.profile_data.medications)) {
+      console.warn('Profile medications is not an array, converting it')
+      newProfile.profile_data.medications = []
+    }
+
+    console.log('Setting currentProfile with validated data:', newProfile)
+    currentProfile.value = newProfile
   }
 
   // Clear current profile
   function clearCurrentProfile() {
+    console.log('Clearing current profile')
     currentProfile.value = null
   }
 

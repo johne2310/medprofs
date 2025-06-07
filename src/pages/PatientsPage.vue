@@ -5,21 +5,21 @@
     <!-- Search Bar -->
     <q-card class="q-mb-md">
       <q-card-section>
-        <q-input 
+        <q-input
           v-model="searchTerm"
-          outlined 
-          label="Search patients" 
-          placeholder="Enter name, Medicare number, or DOB"
           class="q-mb-md"
+          label="Search patients"
+          outlined
+          placeholder="Enter name, Medicare number, or DOB"
           @keyup.enter="searchPatients"
         >
           <template v-slot:append>
-            <q-icon name="search" clickable @click="searchPatients" />
+            <q-icon clickable name="search" @click="searchPatients" />
           </template>
         </q-input>
 
         <div class="row justify-end">
-          <q-btn color="primary" label="Add New Patient" icon="add" to="/patients/new" />
+          <q-btn color="primary" icon="add" label="Add New Patient" to="/patients/new" />
         </div>
       </q-card-section>
     </q-card>
@@ -30,34 +30,39 @@
         <div class="text-h6 q-mb-md">
           <span v-if="searchTerm">Search Results</span>
           <span v-else>Recent Patients</span>
-          <q-spinner v-if="patientStore.loading" color="primary" size="1em" class="q-ml-sm" />
+          <q-spinner v-if="patientStore.loading" class="q-ml-sm" color="primary" size="1em" />
         </div>
 
         <div v-if="patientStore.error" class="text-negative q-mb-md">
           {{ patientStore.error }}
         </div>
 
-        <div v-if="patientStore.patients.length === 0 && !patientStore.loading" class="text-center q-pa-md">
-          <q-icon name="person_search" size="3rem" color="grey-5" />
+        <div
+          v-if="patientStore.patients.length === 0 && !patientStore.loading"
+          class="text-center q-pa-md"
+        >
+          <q-icon color="grey-5" name="person_search" size="3rem" />
           <div class="text-grey-7 q-mt-sm">No patients found</div>
         </div>
 
         <q-list v-else bordered separator>
-          <q-item 
-            v-for="patient in patientStore.patients" 
-            :key="patient.id" 
-            clickable 
+          <q-item
+            v-for="patient in patientStore.patients"
+            :key="patient.id"
+            clickable
             @click="selectPatient(patient)"
           >
             <q-item-section>
               <q-item-label>{{ patient.first_name }} {{ patient.last_name }}</q-item-label>
               <q-item-label caption>
-                DOB: {{ formatDate(patient.date_of_birth) }} 
-                <span v-if="patient.medicare_number">| Medicare: {{ patient.medicare_number }}</span>
+                DOB: {{ formatDate(patient.date_of_birth) }}
+                <span v-if="patient.medicare_number"
+                  >| Medicare: {{ patient.medicare_number }}</span
+                >
               </q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-btn flat round icon="arrow_forward" color="primary" />
+              <q-btn color="primary" flat icon="arrow_forward" round />
             </q-item-section>
           </q-item>
         </q-list>
@@ -67,7 +72,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePatientStore } from 'src/stores/patient-store'
 
@@ -75,18 +80,11 @@ const patientStore = usePatientStore()
 const router = useRouter()
 const searchTerm = ref('')
 
-// Format date from ISO to local format with time in 12-hour format
+// Format date from ISO to local format
 function formatDate(isoDate) {
   if (!isoDate) return ''
   const date = new Date(isoDate)
-  return date.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  })
+  return date.toLocaleDateString()
 }
 
 // Search patients
