@@ -1,7 +1,7 @@
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/dashboard'
   },
   {
     path: '/login',
@@ -51,6 +51,13 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/LogoutPage.vue') }
+    ]
+  },
+  {
+    path: '/drugs',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', component: () => import('pages/DrugListPage.vue') }
     ]
   },
 

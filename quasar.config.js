@@ -39,6 +39,9 @@ export default defineConfig((/* ctx */) => {
         browser: [ 'es2022', 'firefox115', 'chrome115', 'safari14' ],
         node: 'node20'
       },
+        env: {
+        APP_VERSION: JSON.stringify(require('./package.json').version),
+      },
 
       vueRouterMode: 'hash', // available values: 'hash', 'history'
       // vueRouterBase,

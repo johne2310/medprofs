@@ -7,25 +7,39 @@
       </q-card-section>
 
       <q-card-section>
-        <q-form class="q-gutter-md">
+        <q-form class="q-gutter-md" @submit.prevent="handleLogin" ref="loginForm">
           <q-input
+            v-model="email"
             outlined
             label="Email"
             type="email"
+            :rules="[
+              val => !!val || 'Email is required',
+              val => /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(val) || 'Please enter a valid email'
+            ]"
+            lazy-rules
           />
 
           <q-input
+            v-model="password"
             outlined
             label="Password"
             type="password"
+            :rules="[val => !!val || 'Password is required']"
+            lazy-rules
           />
+
+          <div v-if="authStore.error" class="text-negative q-mb-md">
+            {{ authStore.error }}
+          </div>
 
           <div class="q-mt-lg">
             <q-btn
+              type="submit"
               color="primary"
               label="Login"
               class="full-width"
-              to="/dashboard"
+              :loading="authStore.loading"
             />
           </div>
         </q-form>
@@ -35,7 +49,39 @@
 </template>
 
 <script setup>
-// This is just a UI scaffold, no actual authentication logic
+import { ref } from 'vue'
+import { useAuthStore } from 'src/stores/auth-store'
+import { useQuasar } from 'quasar'
+
+const $q = useQuasar()
+const authStore = useAuthStore()
+const loginForm = ref(null)
+
+const email = ref('')
+const password = ref('')
+
+async function handleLogin() {
+  try {
+    // Validate form
+    const isValid = await loginForm.value.validate()
+    if (!isValid) {
+      return
+    }
+
+    // Attempt login
+    await authStore.login(email.value, password.value)
+
+    // Show success notification
+    $q.notify({
+      color: 'positive',
+      message: 'Login successful',
+      icon: 'check'
+    })
+} catch (err) {
+    console.error('Failed to login:', err)
+  }
+}
+
 </script>
 
 <style scoped>
