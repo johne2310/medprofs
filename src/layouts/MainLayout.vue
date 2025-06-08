@@ -7,6 +7,10 @@
         <q-toolbar-title> Fast Profiles</q-toolbar-title>
 
         <div class="q-mr-md">ver: {{ packageInfo.version }}</div>
+        <div v-if="authStore.user" class="q-mr-sm">
+          <q-icon name="person" size="sm"></q-icon>
+          {{ authStore.user.email }}
+        </div>
       </q-toolbar>
     </q-header>
 
@@ -26,9 +30,9 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import packageInfo from '../../package.json'
 import { useRoute, useRouter } from 'vue-router'
 import EssentialLink from 'components/EssentialLink.vue'
-import packageInfo from '../../package.json'
 import { useAuthStore } from 'src/stores/auth-store'
 
 const authStore = useAuthStore()
@@ -40,7 +44,7 @@ onMounted(async () => {
 
   // Redirect to login if not authenticated
   if (!authStore.isLoggedIn) {
-    router.push('/login')
+    await router.push('/login')
   }
 })
 
@@ -66,7 +70,7 @@ const linksList = [
   {
     title: 'Drug List',
     caption: 'View all available drugs',
-    icon: 'medication_liquid',
+    icon: 'fa-solid fa-pills',
     to: '/drugs',
   },
   {

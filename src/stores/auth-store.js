@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import supabase from 'src/config/supabase'
 import { useProfilesStore } from 'src/stores/profiles-stores'
@@ -20,13 +20,17 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       // Get current session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
 
       if (sessionError) {
         throw sessionError
       }
 
       if (session) {
+        console.log('session from init: ', session)
         user.value = session.user
       }
 
@@ -48,105 +52,86 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Login with email and password
-  async function login(email, password) {
+  const login = async (email, password) => {
     loading.value = true
     error.value = null
 
-    try {
-      const { data, error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-      if (loginError) {
-        throw loginError
-      }
-
-      user.value = data.user
-
-      // Load drugs after successful login
-      const profilesStore = useProfilesStore()
-      await profilesStore.fetchDrugs()
-      await profilesStore.fetchCommonDrugs()
-
-      router.push('/dashboard')
-      return data
-    } catch (err) {
-      error.value = err.message || 'Failed to login'
-      console.error('Login error:', err)
-      throw err
-    } finally {
-      loading.value = false
+    if (loginError) {
+      throw loginError
     }
+
+    user.value = data.user
+    console.log('user: ', user.value)
+
+    // Load drugs after successful login
+    const profilesStore = useProfilesStore()
+    await profilesStore.fetchDrugs()
+    await profilesStore.fetchCommonDrugs()
+
+    await router.push('/dashboard')
+    loading.value = false
+    console.log('user details: ', data.user)
+    return { data, success: true, error: null }
+    // return data
   }
 
   // Register new user
-  async function register(email, password) {
+  const register = async (email, password) => {
     loading.value = true
     error.value = null
 
-    try {
-      const { data, error: registerError } = await supabase.auth.signUp({
-        email,
-        password
-      })
+    const { data, error: registerError } = await supabase.auth.signUp({
+      email,
+      password,
+    })
 
-      if (registerError) {
-        throw registerError
-      }
-
-      return data
-    } catch (err) {
-      error.value = err.message || 'Failed to register'
-      console.error('Registration error:', err)
-      throw err
-    } finally {
-      loading.value = false
+    if (registerError) {
+      console.error('Registration error:', registerError)
+      throw registerError
     }
+
+    loading.value = false
+    return { data, success: true, error: null }
+    // return data
   }
 
   // Logout user
-  async function logout() {
+  const logout = async () => {
     loading.value = true
     error.value = null
 
-    try {
-      const { error: logoutError } = await supabase.auth.signOut()
+    const { error: logoutError } = await supabase.auth.signOut()
 
-      if (logoutError) {
-        throw logoutError
-      }
-
-      user.value = null
-      router.push('/login')
-    } catch (err) {
-      error.value = err.message || 'Failed to logout'
-      console.error('Logout error:', err)
-    } finally {
-      loading.value = false
+    if (logoutError) {
+      console.error('Logout error:', logoutError)
+      return { success: false, error: logoutError }
     }
+    // if successful logout
+    user.value = null
+    await router.push('/login')
+    loading.value = false
+    return { success: true, error: null }
   }
 
   // Reset password
-  async function resetPassword(email) {
+  const resetPassword = async (email) => {
     loading.value = true
     error.value = null
 
-    try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email)
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email)
 
-      if (resetError) {
-        throw resetError
-      }
-
-      return true
-    } catch (err) {
-      error.value = err.message || 'Failed to send password reset email'
-      console.error('Password reset error:', err)
-      throw err
-    } finally {
-      loading.value = false
+    if (resetError) {
+      console.error('Password reset error:', resetError)
+      throw resetError
     }
+
+    loading.value = false
+    return { success: true, error: null }
   }
 
   // Update user password
@@ -156,7 +141,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const { error: updateError } = await supabase.auth.updateUser({
-        password
+        password,
       })
 
       if (updateError) {
@@ -183,6 +168,6 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     logout,
     resetPassword,
-    updatePassword
+    updatePassword,
   }
 })
